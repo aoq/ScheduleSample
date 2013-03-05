@@ -4,12 +4,19 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.ContentUris;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.CalendarContract;
+import android.provider.CalendarContract.Events;
 import android.view.Menu;
 
 import com.aokyu.dev.sample.schedule.CalendarListFragment.OnCalendarItemClickListener;
+import com.aokyu.dev.sample.schedule.EventListFragment.OnEventItemClickListener;
 
-public class ScheduleActivity extends Activity implements OnCalendarItemClickListener {
+public class ScheduleActivity extends Activity
+    implements OnCalendarItemClickListener, OnEventItemClickListener {
 
     private boolean mTransactionAllowed = false;
 
@@ -106,5 +113,19 @@ public class ScheduleActivity extends Activity implements OnCalendarItemClickLis
     @Override
     public void onCalendarItemClick(long calendarId) {
         showEventListFragment(calendarId);
+    }
+
+    @Override
+    public void onEventItemClicked(long eventId, EventSchedule schedule) {
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        Uri uri = ContentUris.withAppendedId(Events.CONTENT_URI, eventId);
+        intent.setData(uri);
+        boolean allDay = schedule.isAllDay();
+        long start = schedule.getStartDateMillis();
+        long end = schedule.getEndDateMillis();
+        intent.putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, allDay);
+        intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, start);
+        intent.putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end);
+        startActivity(intent);
     }
 }

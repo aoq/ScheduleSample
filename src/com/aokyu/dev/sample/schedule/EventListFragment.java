@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Loader;
 import android.database.Cursor;
@@ -12,6 +13,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -23,6 +26,8 @@ public class EventListFragment extends EventLoaderFragment {
     private ListView mEventView;
     private EventAdapter mEventAdapter;
 
+    private OnEventItemClickListener mListener;
+
     public EventListFragment() {
         super();
     }
@@ -30,6 +35,15 @@ public class EventListFragment extends EventLoaderFragment {
     public static EventListFragment newInstance() {
         EventListFragment fragment = new EventListFragment();
         return fragment;
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+
+        if (activity instanceof OnEventItemClickListener) {
+            mListener = (OnEventItemClickListener) activity;
+        }
     }
 
     @Override
@@ -49,6 +63,22 @@ public class EventListFragment extends EventLoaderFragment {
         mEventView = (ListView) rootView.findViewById(R.id.event_view);
         mEventAdapter = new EventAdapter(mContext, null);
         mEventView.setAdapter(mEventAdapter);
+        mEventView.setOnItemClickListener(new OnItemClickListener() {
+
+            @Override
+            public void onItemClick(AdapterView<?> parent, View v, int position,
+                    long id) {
+                if (mListener != null) {
+                    Cursor cursor = mEventAdapter.getCursor();
+                    // Note that the cursor position have been changed via CursorAdapter#getItemId(int).
+                    int allDay = cursor.getInt(ColumnIndex.ALL_DAY);
+                    long start = cursor.getLong(ColumnIndex.START);
+                    long end = cursor.getLong(ColumnIndex.END);
+                    EventSchedule schedule = new EventSchedule((allDay == 1), start, end);
+                    mListener.onEventItemClicked(id, schedule);
+                }
+            }
+        });
     }
 
     @Override
@@ -135,5 +165,9 @@ public class EventListFragment extends EventLoaderFragment {
             cache.scheduleView.setText(schedule);
         }
 
+    }
+
+    public interface OnEventItemClickListener {
+        public void onEventItemClicked(long eventId, EventSchedule schedule);
     }
 }
